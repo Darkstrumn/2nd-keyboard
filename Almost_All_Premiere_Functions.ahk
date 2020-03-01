@@ -119,7 +119,7 @@ windowWidth := CoordGetControl(x,y, ActiveHwnd)
 
 if (windowWidth < 2000) ;this means that the monitor is NOT maximized
 	{
-	; tooltip, we in here now
+	;tooltip, windowwidth is less than 2000
 	; sleep 500
 	if (whichMonitor = "source"){
 		prFocus("source") ;keep in mind, this FIRST brings focus to the Effects panel
@@ -160,6 +160,11 @@ if (windowWidth > 2000) ;if the monitor in question IS maximized...
 {
 ;tooltip, %shortcut% boy
 ;Then it's not obvious which monitor it is, and it's possible that I misremembered, and pressed the wrong button. Therefore, I will ALSO send the shortcut that corresponds to the alternative monitor.
+
+;Also, it's possible that the window is not in focus. I want to send a middle click to it without moving the mouse, since coordinates arent well supported on other monitors. For this, controlfocus or controlclick MIGHT work...
+
+;ControlClick , x1800 y500, WinTitle, WinText, MIDDLE, 1, Pos
+
 if (shortcut = "^{numpad1}")
 	{
 	;sleep 30
@@ -450,6 +455,7 @@ IfInString, item, CROP
 {
 	if IsFunc("cropClick") {
 		Func := Func("cropClick")
+		sleep 160 ;because it might take awhile to appear in Premiere
 		sleep 160 ;because it might take awhile to appear in Premiere
 		RetVal := Func.Call() 
 		}
@@ -1003,12 +1009,12 @@ effectControlsY = 200 ;the coordinates of roughly where my Effect Controls usual
 
 ;ImageSearch, FoundX, FoundY, effectControlsX, effectControlsY, effectControlsX+200, effectControlsY+800, %A_WorkingDir%\CROP_transform_button_D2019.png ;
 
-ImageSearch, FoundX, FoundY, effectControlsX, effectControlsY, effectControlsX+200, effectControlsY+800, %A_WorkingDir%\CROP_transform_button_D2019_ui100.png
+ImageSearch, FoundX, FoundY, effectControlsX, effectControlsY, effectControlsX+200, effectControlsY+800, %A_WorkingDir%\CROP_transform_2020.png
 if ErrorLevel = 2
 	{
 	;msgbox,,, TaranDir is `n%TaranDir%,0.7
-	ImageSearch, FoundX, FoundY, effectControlsX, effectControlsY, effectControlsX+400, effectControlsY+1200, %A_workingDir%\CROP_transform_button_D2019.png
-	ImageSearch, FoundX, FoundY, effectControlsX, effectControlsY, effectControlsX+400, effectControlsY+1200, %A_workingDir%\CROP_transform_button_D2019_ui100.png
+	; ImageSearch, FoundX, FoundY, effectControlsX, effectControlsY, effectControlsX+400, effectControlsY+1200, %A_workingDir%\CROP_transform_button_D2019.png
+	ImageSearch, FoundX, FoundY, effectControlsX, effectControlsY, effectControlsX+400, effectControlsY+1200, %A_workingDir%\CROP_transform_2020.png
 	}
 if ErrorLevel = 1
 	{
@@ -1043,6 +1049,7 @@ return
 
 reselect()
 {
+;Needs a thing here for chekcing to see what application is open!
 ;alt k??
 Send ^!+k ; another shortcut for Shuttle Stop
 sleep 5
@@ -1086,10 +1093,10 @@ send {enter}
 #ifwinactive
 
 marker(){
-send ^{SC027} ;this is the scan code for a semicolon.  ^;  CTRL SEMICOLON.
-;msgbox,,,hie,0.5
-;should be hitting CTRL ; to make a marker. That's a premiere shortcut u gotta set up.
-;sleep 10
+sendinput, ^!+K ;Premiere shortcut for STOP
+sleep 5
+send ^{SC027} ;this is the scan code for a semicolon. CTRL SEMICOLON is one of my shortcuts to create a marker.  ^;  You have to set that up in Premiere of course.
+
 }
 
 
@@ -1177,10 +1184,98 @@ else
 
 
 
-;EFFECT CONTROLS PANEL ---TRANSFORM ICON CLICKER
+;EFFECT CONTROLS PANEL ---TRANSFORM ICON CLICKER ;F5::
 clickTransformIcon2()
 {
 Tippy("transform icon - F5") ;optional. Used to aid debugging. Delete this if it causes problems.
+
+; ;;;;;;;;;;;;;;;new stuff
+
+; dontrestart = 0
+; restartPoint:
+; blockinput, sendandMouse
+; blockinput, MouseMove
+; blockinput, on
+; ;-Sendinput ^!+5
+; prFocus("effect controls") ;essentially just hits CTRL ALT SHIFT 5 to highlight the effect controls panel.
+; sleep 10
+
+; ;ToolTip, A, , , 2
+; MouseGetPos Xbeginlol, Ybeginlol
+; global Xbegin = Xbeginlol
+; global Ybegin = Ybeginlol
+; ; MsgBox, "please verify that the mouse cannot move"
+; ; sleep 2000
+; ControlGetPos, Xcorner, Ycorner, Width, Height, DroverLord - Window Class3, ahk_class Premiere Pro ;This is HOPEFULLY the ClassNN of the effect controls panel. Use Window Spy to figure it out.
+
+; YY := Ycorner+66 ;ui 100%
+; XX := Xcorner+13 ;ui 100%
+
+; MouseMove, XX, YY, 0
+; sleep 10
+
+; PixelGetColor, colorr, XX, YY
+
+; ; if (colorr = "0x353535") ;for 150% ui
+; if (colorr = "0x222222") ;for 100% ui
+; {
+	; tooltip, color %colorr% means closed triangle. Will click and then SCALE SEARCH
+	; blockinput, Mouse
+	; Click XX, YY
+	; sleep 5
+	; clickTransformIcon()
+	; findVFX(foobar)
+	; Return
+; }
+; ;else if (colorr = "0x757575") ;for 150% ui. again, this values could be different for everyone. check with window spy. This color simply needs to be different from the color when the triangle is closed. it also cannot be the same as a normal panel color (1d1d1d or 232323)
+; else if (colorr = "0x7A7A7A") ;for 100% ui
+; {
+	; ;tooltip, %colorr% means OPENED triangle. SEARCHING FOR SCALE
+	; blockinput, Mouse
+	; sleep 5
+	; clickTransformIcon()
+	
+	
+	; the GOTO goes HERE
+	
+	
+	
+	; ;untwirled = 1
+	; Return, untwirled
+; }
+; else if (colorr = "0x1D1D1D" || colorr = "0x232323")
+	; {
+	; tooltip, this is a normal panel color of 0x1d1d1d or %colorr%, which means NO CLIP has been selected ; assuming you didnt change your UI brightness. so we are going to select the top clip at playhead.
+	; ;I should experiement with putting a "deselect all clips on the timeline" shortcut here...
+	; Send ^p ;--- i have CTRL P set up to toggle "selection follows playhead," which I never use otherwise. ;this makes it so that only the TOP clip is selected.
+	; sleep 10
+	; Send ^p ;this disables "selection follows playhead." I don't know if there is a way to CHECK if it is on or not. 
+	; resetFromAutoVFX()
+	; ;play noise
+	; ;now you need to do all that again, since the motion menu is now open. But only do it ONCE more! 
+	; If (dontrestart = 0)
+		; {
+		; dontrestart = 1
+		; goto, restartPoint ;this is stupid but it works. Feel free to improve any of my code.
+		; }
+	; Return reset
+	; }
+; else
+	; {
+	; tooltip, %colorr% not expected
+	; ;play noise
+	; resetFromAutoVFX()
+	; Return reset
+	; }
+; }
+; Return ;from autoscaler part 1
+
+
+
+; ;;;;;;;;;;;;;new stuff above
+sendinput, {F5} ;lol because premiere now has the shortcut but it SUCKS so this is in case it had failed.
+sleep 5
+
 BlockInput, On ;blocks keyboard and mouse input... I think.
 SetKeyDelay, 0
 sendinput ^!+5 ;highlights the effect controls
@@ -1198,10 +1293,19 @@ MouseMove, X, Y, 0
 MouseClick, left
 MouseMove, %xpos%, %ypos%, 0
 BlockInput, Off
+
+sleep 10
+sendinput ^!+3 ;highlights the timeline
+sleep 10
+sendinput, {F5} ;lol because premiere now has the shortcut but it SUCKS so this is in case it had failed.
+;the above line might not be needed and in fact is useless isnce the shortcut only works while on the timeline....
+sleep 10
+sendinput ^!+5 ;highlights the effect controls. This is so that if you hit COPY, it'll copy the motion effect, NOT a selected clip on the timeline.
+
 }
 
 
-masterClipSelect()
+masterClipSelect() ;i htink i never use this one
 {
 Tippy("masterClipSelect()")
 BlockInput, On
@@ -1214,7 +1318,7 @@ sleep 20
 Send {tab}
 if (A_CaretX = "")
 {
-	;No Caret (blinking vertical line) can be found. Therefore, no clip is selected.
+	;tooltip, No Caret (blinking vertical line) can be found. Therefore`, no clip is selected.
 	;Therefore, we try to select the TOP clip at the playhead, using the code below.
 	Send ^p ;"selection follows playhead,"
 	sleep 10
@@ -1439,7 +1543,7 @@ else if (colorr = "0x7A7A7A") ;for 100% ui
 }
 else if (colorr = "0x1D1D1D" || colorr = "0x232323")
 	{
-	tooltip, this is a normal panel color of 0x1d1d1d or %colorr%, which means NO CLIP has been selected ; assuming you didnt change your UI brightness. so we are going to select the top clip at playhead.
+	;tooltip, this is a normal panel color of 0x1d1d1d or %colorr%, which means NO CLIP has been selected ; assuming you didnt change your UI brightness. so we are going to select the top clip at playhead.
 	Send ^p ;--- i have CTRL P set up to toggle "selection follows playhead," which I never use otherwise. ;this makes it so that only the TOP clip is selected.
 	sleep 10
 	Send ^p ;this disables "selection follows playhead." I don't know if there is a way to CHECK if it is on or not. 
@@ -1473,9 +1577,10 @@ else
 ;how to use instantVFX: https://www.youtube.com/watch?v=Bi3zBqO74ms
 
 ;UPDATE:
-;I overwrote the high DPI scaling behaviour of Premiere, by following THESE instructions: https://forums.adobe.com/message/10081059#10081059 , which changes the look of text and other elements of Premiere.
+;I had overwritten the high DPI scaling behaviour of Premiere, by following THESE instructions: https://forums.adobe.com/message/10081059#10081059 , which changes the look of text and other elements of Premiere.
 ;Doing this totally BROKE the functionality of instantVFX() because now the pixel colors were different, and the images to be searched for would have had to have been updated.
 ;THEREFORE, I switched back to Premiere's built-in UI scaling, and will just have to wait for adobe to fix the issues that come with it.
+;UPDATE: now that i have a 43" 4k monitor, I am back to 100% UI and it is wonderful. Will NEVER go back. 150% UI is just such a PITA to deal with.
 
 
 instantVFX(foobar)
@@ -1486,8 +1591,25 @@ blockinput, sendandMouse
 blockinput, MouseMove
 blockinput, on
 ;-Sendinput ^!+5
+
+;clickTransformIcon()
+
 prFocus("effect controls") ;essentially just hits CTRL ALT SHIFT 5 to highlight the effect controls panel.
 sleep 10
+
+
+; Send {tab}
+; if (A_CaretX = "")
+; {
+	; tooltip, No Caret (blinking vertical line) can be found. Therefore`, no clip is selected.
+	; ;Therefore, we try to select the TOP clip at the playhead, using the code below.
+	; Send ^p ;"selection follows playhead,"
+	; sleep 10
+	; Send ^p
+; }
+
+
+
 
 ;ToolTip, A, , , 2
 MouseGetPos Xbeginlol, Ybeginlol
@@ -1535,7 +1657,7 @@ else if (colorr = "0x7A7A7A") ;for 100% ui
 }
 else if (colorr = "0x1D1D1D" || colorr = "0x232323")
 	{
-	tooltip, this is a normal panel color of 0x1d1d1d or %colorr%, which means NO CLIP has been selected ; assuming you didnt change your UI brightness. so we are going to select the top clip at playhead.
+	;tooltip, this is a normal panel color of 0x1d1d1d or %colorr%, which means NO CLIP has been selected ; assuming you didnt change your UI brightness. so we are going to select the top clip at playhead.
 	;I should experiement with putting a "deselect all clips on the timeline" shortcut here...
 	Send ^p ;--- i have CTRL P set up to toggle "selection follows playhead," which I never use otherwise. ;this makes it so that only the TOP clip is selected.
 	sleep 10
@@ -1631,11 +1753,11 @@ if (foobar = "scale" ||  foobar = "anchor_point" || foobar = "rotation")
 {
 	;msgbox,,,scale or the other 3,1
 	;PixelSearch, Px, Py, xxx+50, yyy, xxx+350, yyy+11, 0x3398EE, 30, Fast RGB ;this is searching to the RIGHT, looking the blueness of the scrubbable hot text. Unfortunately, it sees to start looking from right to left, so if your window is sized too small, it'll possibly latch onto the blue of the playhead/CTI.
-	PixelSearch, Px, Py, xxx+50, yyy, xxx+350, yyy+11, 0x2d8ceb, 30, Fast RGB ;this is searching to the RIGHT, looking the blueness of the scrubbable hot text. Unfortunately, it sees to start looking from right to left, so if your window is sized too small, it'll possibly latch onto the blue of the playhead/CTI.
+	PixelSearch, Px, Py, xxx+50, yyy, xxx+250, yyy+11, 0x2d8ceb, 30, Fast RGB ;this is searching to the RIGHT, looking the blueness of the scrubbable hot text. Unfortunately, it sees to start looking from right to left, so if your window is sized too small, it'll possibly latch onto the blue of the playhead/CTI. TEchnically, I could check to see the size of the Effect controls panel FIRST, and then allow the number that is currently 250 to be less than half that, but I haven't run into too much trouble so far...
 }
 else if (foobar = "anchor_point_vertical")
 {
-	tooltip, looking for 0.00
+	tooltip, 0.00? ;(looking for that now)
 	;msgbox,,, looking for 0.00,0.5
 	;ImageSearch, Px, Py, xxx+50, yyy, xxx+800, yyy+100, *3 %A_WorkingDir%\anti-flicker-filter_000_D2019.png ;because i never change the value of the anti-flicker filter, (0.00) and it is always the same distance from the actual hot text that i WANT, it is a reliable landmark. So this is a screenshot of THAT.
 	ImageSearch, Px, Py, xxx+50, yyy, xxx+800, yyy+100, *3 %A_WorkingDir%\anti-flicker-filter_000_D2019_ui100.png ;for a user interface at 100%...
@@ -1657,7 +1779,7 @@ if ErrorLevel
 	}
 else
 	{
-	tooltip, A color within 30 shades of variation was found at X%Px% Y%Py%
+	;tooltip, A color within 30 shades of variation was found at X%Px% Y%Py%
 	;sleep 1000
     ;MsgBox, A color within 30 shades of variation was found at X%Px% Y%Py%.
 	if (foobar <> "anchor_point_vertical")
@@ -1769,20 +1891,29 @@ tooltip,,,12
 
 
 ;;;;note to self: this highlights the find box of the bin it highlights, i have no idea why. must fix
+;other not to self -- i don't know what that sentance is referring to.
 
-;#IfWinNotActive ahk_class Premiere Pro
+
+
+
+;macro key G3, when NOT in Premiere.
+;macro sends CTRL SHIFT L, though CTRL ALT L might be better. ideally, it should not use any modifier keys at all... maybe just send a wrapped super function key.
+;play/pause premiere even when not in focus
 stopPlaying()
 {
+sleep 12 ;this is because all my macros in icue are set to spend 10ms held down before they release. This adds 10ms of latency, but it's worth it to ensure that the keystroke(s) are actually seen by Windows. I should add this to a lot of my other macros. Also, I might reduce it to 5ms in the future.
+send {SC081} ; this is for debugging. it does nothing but show up in the Key History and Script info.
 if WinActive("ahk_exe Adobe Premiere Pro.exe")
+	{
 	sendinput, {space}
-;then it will ekip this next part and go to the end.
+	goto, stopPlayEND
+	}
+;then it will skip this next part and go to the end.
 if !WinActive("ahk_exe Adobe Premiere Pro.exe")
 {
-;Below is some code to pause/play the timeline in Premiere, when the application is NOT the active window (on top.) This means that I can be reading through the script, WHILE the video is playing, and play/pause as needed without having to switch back to premeire every single time.
-;Maybe this code really shoudl be in ALL PREMIERE FUNCTIONS.ahk.
+;Below is some code to pause/play the timeline in Premiere, when the application is NOT the active window (on top.) This means that I can be reading through the script, WHILE the video is playing, and play/pause as needed without having to switch back to premiere every single time.
 
-;;macro key G3, when NOT in Premiere.
-;play/pause premiere even when not in focus
+
 
 ;WinGet, lolexe, ProcessName, A
 WinGetClass, lolclass, A ; "A" refers to the currently active window
@@ -1796,16 +1927,18 @@ if IsFunc("Keyshower") {
 ;Trying to bring focus to the TIMELINE itself is really dangerous and unpredictable, since its Class# is always changing, based upon how many sequences, and other panels, that might be open.
 ControlFocus, DroverLord - Window Class3,ahk_exe Adobe Premiere Pro.exe
 ; Window Class14 is the Program monitor, at least on my machine.
-sleep 20
+; well, now it's Window Class13. it really does change around a lot.
+; Window Class3 seems to fairly consistently be the Effect Controls panel.
+sleep 30
 ;ControlFocus, DroverLord - Window Class14,ahk_exe Adobe Premiere Pro.exe
 ;If we don't use ControlFocus first, ControlSend experiences bizzare and erratic behaviour, only able to work when the video is PLAYING, but not otherwise, but also SOMETIMES working perfectly, in unknown circumstances. Huge thanks to Frank Drebin for figuring this one out; it had been driving me absolutely mad. https://www.youtube.com/watch?v=sC2SeGCTX4U
 
 ;I tried windowclass3, (the effect controls) but that does not work, possibly due to stuff in the bins, which would play instead sometimes.
 
-sleep 10
+;sleep 10
 ;ControlSend,DroverLord - Window Class3,^!+5,ahk_exe Adobe Premiere Pro.exe
 ;that is my shortcut for the Effect Controls.
-sleep 10
+;sleep 10
 ;ControlSend,DroverLord - Window Class3,^!+3,ahk_exe Adobe Premiere Pro.exe
 
 ;that is my shortcut for the Timeline.
@@ -1824,13 +1957,23 @@ sleep 40
 ;msgbox,,, srsly wtf,0.5
 ;msgbox,srsly wtf
 ControlSend,DroverLord - Window Class3, ^+!5,ahk_exe Adobe Premiere Pro.exe
-sleep 30
-
+sleep 10 ;this asn't here at all for a long time. dunno if i really need it.
+; ;just in case these keys get stuck down due to some window making itself the top one, or some autosave somewhere that does the same thing, or something...
+; sleep 30
+; Send,{LCtrl up}
+; Send,{RCtrl up}
+; sleep 1
+; Send,{RAlt up}
+; Send,{RAlt up}
+; sleep 1
+; Send,{LShift up}
+; Send,{RShift up}
+; sleep 2
 
 ControlSend,,{space}, ahk_exe Adobe Premiere Pro.exe
 ;;;use either the ABOVE line, or the line BELOW. Can't say right now which is better...
 ;ControlSend,DroverLord - Window Class1,{space},ahk_exe Adobe Premiere Pro.exe
-;even though we are sending the "SPACE" to a windowclass that (often) doesn't exist, because we already highlighted the effect controls, the space will go to the effect controls panel. (it hasb't failed to do so yet, at least.)
+;even though we are sending the "SPACE" to a windowclass that (often) doesn't exist, because we already highlighted the effect controls, the "space" will go to the effect controls panel. USUALLY. Sometimes it still ends up playing some file in some bin.
 
 
 
@@ -1841,6 +1984,8 @@ if not WinActive(lolClass)
 }
 
 ;end of Premiere play/pause when not in focus.
+send {SC082} ; only used as a sort of a debugging flag thingy. will comment out later. maybe.
+stopPlayEND:
 }
 
 
@@ -1848,7 +1993,7 @@ if not WinActive(lolClass)
 CoordGetControl(xCoord, yCoord, _hWin) ; _hWin should be the ID of the active window
 {
 
-	;this overly complicated funciton will get information about a window without having to move the cursor to those coordinates first. the AHK people really should have a command for this already....
+	;this overly complicated function will get information about a window without having to move the cursor to those coordinates first. the AHK people really should have a command for this already....
 	;Keep in mind, Premiere has LOTS of small windows within it. Open window Spy and move your cursor around Premiere, to see what i mean.
 
 	;script originally from Coco
@@ -1884,37 +2029,45 @@ CoordGetControl(xCoord, yCoord, _hWin) ; _hWin should be the ID of the active wi
 
 
 
-
+;this is assigned to G2,
+;which sends CTRL numpad0.
 easeInAndOut(){
 
-;EASE IN AND EASE OUT
-;This will click on the necessary menu items for you
-;all you have to do is hover the cursor over a keyframe (or selected keyframes) in the Effect Controls panel, and hit the button.
-tooltip, ease in and out
-; blockinput, sendandMouse
-blockinput, MouseMove
-; blockinput, on
-click right
-send T
+;NEW method in 2020 is below.
+send, {f10} ;shortcut is set in premiere to ease in
 sleep 10
-send E
-send E
-sleep 10
-send {enter}
-sleep 10
-tooltip, 
+send, +{F10} ;shortcut is set in premiere to ease out
+sleep 5
+
+
+; ;OLD EASE IN AND EASE OUT before the shortcuts were added for real in 2020
+; ;This will click on the necessary menu items for you
+; ;all you have to do is hover the cursor over a keyframe (or selected keyframes) in the Effect Controls panel, and hit the button.
+; tooltip, ease in and out
+; ; blockinput, sendandMouse
+; blockinput, MouseMove
+; ; blockinput, on
 ; click right
-click middle
-sendinput {click right}
-send T
-sleep 10
-send E
-sleep 10
-send {enter}
-blockinput, off
-blockinput, MouseMoveOff
-;sleep 100
-tooltip,
+; send T
+; sleep 10
+; send E
+; send E
+; sleep 10
+; send {enter}
+; sleep 10
+; tooltip, 
+; ; click right
+; click middle
+; sendinput {click right}
+; send T
+; sleep 10
+; send E
+; sleep 10
+; send {enter}
+; blockinput, off
+; blockinput, MouseMoveOff
+; ;sleep 100
+; tooltip,
 
 }
 
